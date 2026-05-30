@@ -2,34 +2,38 @@
 set -euo pipefail
 
 REPO_DIR=/opt/aimili-vpngate-minimal
-DATA_DIR=/opt/aimili-minimal-data
 SERVICE_NAME=aimili-vpngate-minimal
 XRAY_CONFIG=/usr/local/etc/xray/config.json
 XRAY_BIN=/usr/local/bin/xray
-VLESS_PORT=${VLESS_PORT:-2053}
+
 PREFERRED_COUNTRY=${PREFERRED_COUNTRY:-日本}
 PROXY_HOST=${PROXY_HOST:-127.0.0.1}
 PROXY_PORT=${PROXY_PORT:-7928}
 TUN_DEVICE=${TUN_DEVICE:-tun0}
 ROUTE_TABLE_ID=${ROUTE_TABLE_ID:-100}
 DATA_DIR=${DATA_DIR:-/opt/aimili-minimal-data}
+VLESS_PORT=${VLESS_PORT:-2053}
+REMARK=${REMARK:-}
 
-REMARK=""
+parse_country_alias() {
+  case "$(echo "$1" | tr '[:upper:]' '[:lower:]')" in
+    jp|japan|日本) echo "日本" ;;
+    kr|korea|韩国|南韩) echo "韩国" ;;
+    *) echo "$1" ;;
+  esac
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    jp|japan|日本)
-      PREFERRED_COUNTRY="日本"
-      shift
-      ;;
-    kr|korea|韩国|南韩)
-      PREFERRED_COUNTRY="韩国"
+    jp|japan|日本|kr|korea|韩国|南韩)
+      PREFERRED_COUNTRY="$(parse_country_alias "$1")"
       shift
       ;;
     --country)
-      PREFERRED_COUNTRY="$2"
+      PREFERRED_COUNTRY="$(parse_country_alias "$2")"
       shift 2
       ;;
-    --port)
+    --port|--vless-port)
       VLESS_PORT="$2"
       shift 2
       ;;
@@ -37,35 +41,39 @@ while [[ $# -gt 0 ]]; do
       REMARK="$2"
       shift 2
       ;;
+    --proxy-port)
+      PROXY_PORT="$2"
+      shift 2
+      ;;
+    --tun)
+      TUN_DEVICE="$2"
+      shift 2
+      ;;
+    --route-table)
+      ROUTE_TABLE_ID="$2"
+      shift 2
+      ;;
+    --data-dir)
+      DATA_DIR="$2"
+      shift 2
+      ;;
     *)
-      PREFERRED_COUNTRY="$1"
-      shift
+      echo "Unknown argument: $1" >&2
+      exit 1
       ;;
   esac
 done
 
-if [[ -z "$REMARK" ]]; then
-  REMARK="${PREFERRED_COUNTRY}家宽"
+if [[ "$PREFERRED_COUNTRY" == "韩国" ]]; then
+  [[ "$PROXY_PORT" == "7928" ]] && PROXY_PORT=7938
+  [[ "$TUN_DEVICE" == "tun0" ]] && TUN_DEVICE=tun1
+  [[ "$ROUTE_TABLE_ID" == "100" ]] && ROUTE_TABLE_ID=101
+  [[ "$VLESS_PORT" == "2053" ]] && VLESS_PORT=2054
+  [[ "$DATA_DIR" == "/opt/aimili-minimal-data" ]] && DATA_DIR=/opt/aimili-minimal-data-kr
 fi
 
-COUNTRY_EXPLICIT=0
-PORT_EXPLICIT=0
-REMARK_EXPLICIT=0
-
-for arg in "$@"; do
-  case "$arg" in
-    --country) COUNTRY_EXPLICIT=1 ;;
-    --port) PORT_EXPLICIT=1 ;;
-    --remark) REMARK_EXPLICIT=1 ;;
-  esac
-done
-
-if [[ "$PREFERRED_COUNTRY" == "韩国" ]]; then
-  if [[ "$PROXY_PORT" == "7928" ]]; then PROXY_PORT=7938; fi
-  if [[ "$TUN_DEVICE" == "tun0" ]]; then TUN_DEVICE=tun1; fi
-  if [[ "$ROUTE_TABLE_ID" == "100" ]]; then ROUTE_TABLE_ID=101; fi
-  if [[ "$VLESS_PORT" == "2053" ]]; then VLESS_PORT=2054; fi
-  if [[ "$DATA_DIR" == "/opt/aimili-minimal-data" ]]; then DATA_DIR=/opt/aimili-minimal-data-kr; fi
+if [[ -z "$REMARK" ]]; then
+  REMARK="${PREFERRED_COUNTRY}家宽"
 fi
 
 print_section() {
@@ -281,14 +289,14 @@ print_section "VLESS Link"
 echo "$VLESS_LINK"
 
 print_section "Summary"
-echo "Country: ${PREFERRED_COUNTRY}"
-echo "Exit IP: ${SERVER_IP}"
-echo "Active Node: ${ACTIVE_NODE}"
-echo "Proxy: ${PROXY_HOST}:${PROXY_PORT}"
-echo "Tun Device: ${TUN_DEVICE}"
-echo "Route Table: ${ROUTE_TABLE_ID}"
-echo "VLESS Port: ${VLESS_PORT}"
-echo "Remark: ${REMARK}"
-echo "Data Dir: ${DATA_DIR}"
-echo "Saved Link File: ${VLESS_FILE}"
-echo "Status: healthy preferred node connected"
+printf '%-18s %s\n' 'Country' "${PREFERRED_COUNTRY}"
+printf '%-18s %s\n' 'Exit IP' "${SERVER_IP}"
+printf '%-18s %s\n' 'Active Node' "${ACTIVE_NODE}"
+printf '%-18s %s\n' 'Proxy' "${PROXY_HOST}:${PROXY_PORT}"
+printf '%-18s %s\n' 'Tun Device' "${TUN_DEVICE}"
+printf '%-18s %s\n' 'Route Table' "${ROUTE_TABLE_ID}"
+printf '%-18s %s\n' 'VLESS Port' "${VLESS_PORT}"
+printf '%-18s %s\n' 'Remark' "${REMARK}"
+printf '%-18s %s\n' 'Data Dir' "${DATA_DIR}"
+printf '%-18s %s\n' 'Saved Link File' "${VLESS_FILE}"
+printf '%-18s %s\n' 'Status' 'healthy preferred node connected'

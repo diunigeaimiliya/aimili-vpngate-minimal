@@ -46,6 +46,19 @@ More explicit parameters:
 bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) --country kr --port 2054 --remark 韩国家宽
 ```
 
+Advanced parameters:
+
+```bash
+bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) \
+  --country kr \
+  --port 2054 \
+  --remark 韩国家宽 \
+  --proxy-port 7938 \
+  --tun tun1 \
+  --route-table 101 \
+  --data-dir /opt/aimili-minimal-data-kr
+```
+
 After installation finishes, it waits for a healthy preferred node and then prints:
 
 - service status
@@ -99,6 +112,18 @@ sudo env \
   ROUTE_TABLE_ID=101 \
   DATA_DIR=/opt/aimili-minimal-data-kr \
   python3 aimili_minimal.py
+```
+
+## Supported installer flags
+
+```bash
+--country
+--port / --vless-port
+--remark
+--proxy-port
+--tun
+--route-table
+--data-dir
 ```
 
 ## Environment variables
