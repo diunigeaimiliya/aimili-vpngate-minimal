@@ -1,0 +1,22 @@
+[Unit]
+Description=Aimili VPNGate Minimal
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/aimili-vpngate-minimal
+ExecStart=/usr/bin/python3 /opt/aimili-vpngate-minimal/aimili_minimal.py
+Restart=always
+RestartSec=5
+Environment=PREFERRED_COUNTRY=日本
+Environment=PREFERRED_IP_TYPE=residential
+Environment=PREFERRED_QUALITY=normal
+Environment=PROXY_HOST=127.0.0.1
+Environment=PROXY_PORT=7928
+Environment=TUN_DEVICE=tun0
+Environment=ROUTE_TABLE_ID=100
+Environment=DATA_DIR=/opt/aimili-minimal-data
+
+[Install]
+WantedBy=multi-user.target
