@@ -25,11 +25,25 @@ Run **one command**, and get:
 
 ## One-command install
 
+Default Japan instance:
+
 ```bash
 bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh)
 ```
 
-After installation finishes, it prints a ready-to-use VLESS link.
+Explicit country shortcut:
+
+```bash
+bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) jp
+bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) kr
+```
+
+After installation finishes, it prints:
+
+- service status
+- current selected node
+- proxy health
+- final ready-to-use VLESS link
 
 ## Default behavior
 
@@ -45,8 +59,24 @@ Defaults:
 
 ## Example: Korea instance
 
+Direct one-command install:
+
 ```bash
-PREFERRED_COUNTRY=韩国 PROXY_PORT=7938 TUN_DEVICE=tun1 ROUTE_TABLE_ID=101 VLESS_PORT=2054 bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) kr
+```
+
+Manual runtime example:
+
+```bash
+sudo env \
+  PREFERRED_COUNTRY=韩国 \
+  PREFERRED_IP_TYPE=residential \
+  PREFERRED_QUALITY=normal \
+  PROXY_PORT=7938 \
+  TUN_DEVICE=tun1 \
+  ROUTE_TABLE_ID=101 \
+  DATA_DIR=/opt/aimili-minimal-data-kr \
+  python3 aimili_minimal.py
 ```
 
 ## Environment variables
@@ -75,12 +105,23 @@ The installer prints a final link like:
 vless://UUID@SERVER:2053?remarks=日本家宽&tls=1&peer=www.cloudflare.com&udp=1&xtls=2&pbk=PUBLIC_KEY&sid=SHORT_ID
 ```
 
+## IP source chain
+
+This project uses three different sources:
+
+1. **Candidate nodes:** VPNGate  
+   `https://www.vpngate.net/api/iphone/`
+
+2. **IP type / quality labels:** ip-api.com  
+   Used to classify nodes as `residential`, `proxy`, `hosting`, or `mobile`.
+
+3. **Final exit IP:** the connected VPNGate node itself
+
 ## Notes
 
-- Candidate node source: `https://www.vpngate.net/api/iphone/`
-- IP type / quality labels: `ip-api.com`
 - Requires root
 - Tested on Ubuntu / Debian-like systems
+- Designed to stay minimal on purpose
 
 ## License
 

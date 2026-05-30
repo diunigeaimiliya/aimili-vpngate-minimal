@@ -13,6 +13,34 @@ PROXY_PORT=${PROXY_PORT:-7928}
 TUN_DEVICE=${TUN_DEVICE:-tun0}
 ROUTE_TABLE_ID=${ROUTE_TABLE_ID:-100}
 
+COUNTRY_ALIAS="${1:-}"
+if [[ -n "$COUNTRY_ALIAS" ]]; then
+  case "$(echo "$COUNTRY_ALIAS" | tr '[:upper:]' '[:lower:]')" in
+    jp|japan|日本)
+      PREFERRED_COUNTRY="日本"
+      ;;
+    kr|korea|韩国|南韩)
+      PREFERRED_COUNTRY="韩国"
+      ;;
+    *)
+      PREFERRED_COUNTRY="$COUNTRY_ALIAS"
+      ;;
+  esac
+fi
+
+if [[ "$PREFERRED_COUNTRY" == "韩国" ]]; then
+  : "${PROXY_PORT:=7938}"
+  : "${TUN_DEVICE:=tun1}"
+  : "${ROUTE_TABLE_ID:=101}"
+  : "${VLESS_PORT:=2054}"
+  : "${DATA_DIR:=/opt/aimili-minimal-data-kr}"
+fi
+
+print_section() {
+  echo
+  echo "==== $1 ===="
+}
+
 if [[ $EUID -ne 0 ]]; then
   echo "Please run as root"
   exit 1
@@ -146,13 +174,44 @@ systemctl enable --now ${SERVICE_NAME}
 systemctl enable --now xray
 systemctl restart ${SERVICE_NAME}
 systemctl restart xray
-sleep 3
+sleep 5
+
+print_section "Service Status"
+systemctl --no-pager --full status ${SERVICE_NAME} | sed -n '1,20p' || true
+systemctl --no-pager --full status xray | sed -n '1,20p' || true
+
+print_section "Port Check"
+ss -ltnp | grep -E ":${PROXY_PORT}|:${VLESS_PORT}" || true
+
+STATE_FILE="${DATA_DIR}/state.json"
+if [[ -f "$STATE_FILE" ]]; then
+  print_section "Current State"
+  python3 - <<PY
+import json
+from pathlib import Path
+p=Path('$STATE_FILE')
+state=json.loads(p.read_text(encoding='utf-8'))
+for k in ['active_openvpn_node_id','last_check_message','proxy_ok','proxy_ip','proxy_latency_ms']:
+    print(f"{k}: {state.get(k)}")
+PY
+fi
 
 SERVER_IP=$(curl -4 -s https://api.ipify.org || hostname -I | awk '{print $1}')
-python3 ${REPO_DIR}/share_link.py \
+VLESS_LINK=$(python3 ${REPO_DIR}/share_link.py \
   --server "$SERVER_IP" \
   --port "$VLESS_PORT" \
   --uuid "$UUID" \
   --public-key "$PUBLIC_KEY" \
   --short-id "$SHORT_ID" \
-  --remark "${PREFERRED_COUNTRY}家宽"
+  --remark "${PREFERRED_COUNTRY}家宽")
+
+print_section "VLESS Link"
+echo "$VLESS_LINK"
+
+print_section "Summary"
+echo "Country: ${PREFERRED_COUNTRY}"
+echo "Proxy: ${PROXY_HOST}:${PROXY_PORT}"
+echo "Tun Device: ${TUN_DEVICE}"
+echo "Route Table: ${ROUTE_TABLE_ID}"
+echo "VLESS Port: ${VLESS_PORT}"
+echo "Data Dir: ${DATA_DIR}"
