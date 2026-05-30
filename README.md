@@ -38,12 +38,14 @@ bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate
 bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) kr
 ```
 
-After installation finishes, it prints:
+After installation finishes, it waits for a healthy preferred node and then prints:
 
 - service status
 - current selected node
 - proxy health
 - final ready-to-use VLESS link
+
+If no healthy preferred node is connected in time, the installer exits with an error and tells you which logs to check.
 
 ## Default behavior
 

@@ -174,7 +174,28 @@ systemctl enable --now ${SERVICE_NAME}
 systemctl enable --now xray
 systemctl restart ${SERVICE_NAME}
 systemctl restart xray
-sleep 5
+
+STATE_FILE="${DATA_DIR}/state.json"
+WAIT_OK=0
+for _ in $(seq 1 36); do
+  sleep 5
+  if [[ -f "$STATE_FILE" ]]; then
+    if python3 - <<PY
+import json, sys
+from pathlib import Path
+p=Path('$STATE_FILE')
+state=json.loads(p.read_text(encoding='utf-8'))
+active=state.get('active_openvpn_node_id')
+proxy_ok=state.get('proxy_ok')
+print(json.dumps({'active_openvpn_node_id': active, 'proxy_ok': proxy_ok, 'last_check_message': state.get('last_check_message')}, ensure_ascii=False))
+sys.exit(0 if active and proxy_ok else 1)
+PY
+    then
+      WAIT_OK=1
+      break
+    fi
+  fi
+done
 
 print_section "Service Status"
 systemctl --no-pager --full status ${SERVICE_NAME} | sed -n '1,20p' || true
@@ -183,7 +204,6 @@ systemctl --no-pager --full status xray | sed -n '1,20p' || true
 print_section "Port Check"
 ss -ltnp | grep -E ":${PROXY_PORT}|:${VLESS_PORT}" || true
 
-STATE_FILE="${DATA_DIR}/state.json"
 if [[ -f "$STATE_FILE" ]]; then
   print_section "Current State"
   python3 - <<PY
@@ -194,6 +214,13 @@ state=json.loads(p.read_text(encoding='utf-8'))
 for k in ['active_openvpn_node_id','last_check_message','proxy_ok','proxy_ip','proxy_latency_ms']:
     print(f"{k}: {state.get(k)}")
 PY
+fi
+
+if [[ "$WAIT_OK" != "1" ]]; then
+  print_section "Install Result"
+  echo "Installation finished, but no healthy preferred node is connected yet."
+  echo "Check logs with: journalctl -u ${SERVICE_NAME} -n 100 --no-pager"
+  exit 1
 fi
 
 SERVER_IP=$(curl -4 -s https://api.ipify.org || hostname -I | awk '{print $1}')
@@ -215,3 +242,4 @@ echo "Tun Device: ${TUN_DEVICE}"
 echo "Route Table: ${ROUTE_TABLE_ID}"
 echo "VLESS Port: ${VLESS_PORT}"
 echo "Data Dir: ${DATA_DIR}"
+echo "Status: healthy preferred node connected"
