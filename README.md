@@ -12,7 +12,25 @@
 
 A minimal VPNGate residential egress project for Linux VPS.
 
+### Table of contents
+
+- [Goal](#goal)
+- [Quick start](#quick-start)
+- [Country shortcuts](#country-shortcuts)
+- [Advanced install example](#advanced-install-example)
+- [What the installer prints](#what-the-installer-prints)
+- [What a successful result looks like](#what-a-successful-result-looks-like)
+- [Beginner steps](#beginner-steps)
+- [Default behavior](#default-behavior)
+- [Korea defaults](#korea-defaults)
+- [Supported installer flags](#supported-installer-flags)
+- [Health check](#health-check)
+- [Troubleshooting](#troubleshooting)
+- [Uninstall](#uninstall)
+- [IP source chain](#ip-source-chain)
+
 ### Goal
+<a id="goal"></a>
 
 Run **one command**, and get:
 
@@ -23,7 +41,39 @@ Run **one command**, and get:
 - a ready-to-use **VLESS link** printed at the end
 - the final link also saved locally on disk
 
+### Quick start
+<a id="quick-start"></a>
+
+Default Japan instance:
+
+```bash
+bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh)
+```
+
+### Country shortcuts
+<a id="country-shortcuts"></a>
+
+```bash
+bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) jp
+bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) kr
+```
+
+### Advanced install example
+<a id="advanced-install-example"></a>
+
+```bash
+bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) \
+  --country kr \
+  --port 2054 \
+  --remark KR-Residential \
+  --proxy-port 7938 \
+  --tun tun1 \
+  --route-table 101 \
+  --data-dir /opt/aimili-minimal-data-kr
+```
+
 ### What the installer prints
+<a id="what-the-installer-prints"></a>
 
 After installation finishes, it waits for a healthy preferred node and then prints:
 
@@ -39,8 +89,7 @@ After installation finishes, it waits for a healthy preferred node and then prin
 If no healthy preferred node is connected in time, the installer exits with an error and tells you which logs to check.
 
 ### What a successful result looks like
-
-Example summary:
+<a id="what-a-successful-result-looks-like"></a>
 
 ```text
 ==== VLESS Link ====
@@ -59,35 +108,8 @@ Saved Link File    /root/aimili-vless-tun0.txt
 Status             healthy preferred node connected
 ```
 
-### One-command install
-
-Default Japan instance:
-
-```bash
-bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh)
-```
-
-Country shortcuts:
-
-```bash
-bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) jp
-bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) kr
-```
-
-Advanced example:
-
-```bash
-bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) \
-  --country kr \
-  --port 2054 \
-  --remark KR-Residential \
-  --proxy-port 7938 \
-  --tun tun1 \
-  --route-table 101 \
-  --data-dir /opt/aimili-minimal-data-kr
-```
-
 ### Beginner steps
+<a id="beginner-steps"></a>
 
 1. Open your VPS terminal.
 2. Make sure you are root, or run `sudo -i` first.
@@ -98,6 +120,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate
 7. If you close the terminal, read the saved link file from `/root/aimili-vless-tun0.txt` or `/root/aimili-vless-tun1.txt`.
 
 ### Default behavior
+<a id="default-behavior"></a>
 
 Defaults:
 
@@ -111,6 +134,7 @@ Defaults:
 - saved link file: `/root/aimili-vless-tun0.txt`
 
 ### Korea defaults
+<a id="korea-defaults"></a>
 
 Using `kr` automatically switches defaults to:
 
@@ -122,6 +146,7 @@ Using `kr` automatically switches defaults to:
 - saved link file: `/root/aimili-vless-tun1.txt`
 
 ### Supported installer flags
+<a id="supported-installer-flags"></a>
 
 ```bash
 --country
@@ -134,7 +159,24 @@ Using `kr` automatically switches defaults to:
 --wait-seconds
 ```
 
+### Health check
+<a id="health-check"></a>
+
+Use the included check script:
+
+```bash
+curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/check.sh | sudo bash
+```
+
+It prints:
+- service status
+- current state
+- active node details
+- important ports
+- saved VLESS link
+
 ### Troubleshooting
+<a id="troubleshooting"></a>
 
 #### 1. The script finished but no VLESS link was printed
 
@@ -150,8 +192,6 @@ Common reasons:
 - `openvpn` failed to connect
 
 #### 2. How do I find the generated VLESS link again?
-
-Check the saved file:
 
 ```bash
 cat /root/aimili-vless-tun0.txt
@@ -174,12 +214,14 @@ curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minima
 ```
 
 ### Uninstall
+<a id="uninstall"></a>
 
 ```bash
 curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/uninstall.sh | sudo bash
 ```
 
 ### IP source chain
+<a id="ip-source-chain"></a>
 
 This project uses three sources:
 
@@ -196,7 +238,25 @@ This project uses three sources:
 
 这是一个给 Linux VPS 用的极简 VPNGate 住宅出口项目。
 
+### 目录
+
+- [目标](#目标)
+- [快速开始](#快速开始)
+- [国家快捷参数](#国家快捷参数)
+- [高级安装示例](#高级安装示例)
+- [安装完成后会输出什么](#安装完成后会输出什么)
+- [成功安装后的样子](#成功安装后的样子)
+- [小白跟着做](#小白跟着做)
+- [默认行为](#默认行为)
+- [韩国实例默认值](#韩国实例默认值)
+- [支持的安装参数](#支持的安装参数)
+- [健康检查](#健康检查)
+- [常见问题 / 排错](#常见问题--排错)
+- [卸载](#卸载)
+- [IP 来源链路](#ip-来源链路)
+
 ### 目标
+<a id="目标"></a>
 
 你只需要执行 **一条命令**，它就会自动帮你完成：
 
@@ -208,7 +268,39 @@ This project uses three sources:
 - 最后直接输出一个可用的 **VLESS 链接**
 - 同时把这个链接保存到本地文件里
 
+### 快速开始
+<a id="快速开始"></a>
+
+默认安装日本实例：
+
+```bash
+bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh)
+```
+
+### 国家快捷参数
+<a id="国家快捷参数"></a>
+
+```bash
+bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) jp
+bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) kr
+```
+
+### 高级安装示例
+<a id="高级安装示例"></a>
+
+```bash
+bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) \
+  --country kr \
+  --port 2054 \
+  --remark 韩国家宽 \
+  --proxy-port 7938 \
+  --tun tun1 \
+  --route-table 101 \
+  --data-dir /opt/aimili-minimal-data-kr
+```
+
 ### 安装完成后会输出什么
+<a id="安装完成后会输出什么"></a>
 
 脚本会等待“健康的优选节点真正连上”以后，再输出：
 
@@ -224,8 +316,7 @@ This project uses three sources:
 如果在等待时间内没有连上健康节点，脚本会直接报错，并告诉你去看哪条日志。
 
 ### 成功安装后的样子
-
-大致会看到这种结果：
+<a id="成功安装后的样子"></a>
 
 ```text
 ==== VLESS Link ====
@@ -244,35 +335,8 @@ Saved Link File    /root/aimili-vless-tun0.txt
 Status             healthy preferred node connected
 ```
 
-### 一键安装
-
-默认安装日本实例：
-
-```bash
-bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh)
-```
-
-快捷国家参数：
-
-```bash
-bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) jp
-bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) kr
-```
-
-更明确的参数写法：
-
-```bash
-bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) \
-  --country kr \
-  --port 2054 \
-  --remark 韩国家宽 \
-  --proxy-port 7938 \
-  --tun tun1 \
-  --route-table 101 \
-  --data-dir /opt/aimili-minimal-data-kr
-```
-
 ### 小白跟着做
+<a id="小白跟着做"></a>
 
 1. 打开你的 VPS 终端。  
 2. 先切到 root，或者执行 `sudo -i`。  
@@ -283,6 +347,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate
 7. 如果终端关掉了，也可以去本地文件里重新看链接。  
 
 ### 默认行为
+<a id="默认行为"></a>
 
 默认是：
 
@@ -296,6 +361,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate
 - 链接保存文件：`/root/aimili-vless-tun0.txt`
 
 ### 韩国实例默认值
+<a id="韩国实例默认值"></a>
 
 如果你用 `kr` 安装，它会自动切换成：
 
@@ -307,6 +373,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate
 - 链接保存文件：`/root/aimili-vless-tun1.txt`
 
 ### 支持的安装参数
+<a id="支持的安装参数"></a>
 
 ```bash
 --country
@@ -319,7 +386,24 @@ bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate
 --wait-seconds
 ```
 
+### 健康检查
+<a id="健康检查"></a>
+
+使用仓库内提供的检查脚本：
+
+```bash
+curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/check.sh | sudo bash
+```
+
+它会输出：
+- 服务状态
+- 当前状态
+- 活动节点详情
+- 关键端口
+- 保存好的 VLESS 链接
+
 ### 常见问题 / 排错
+<a id="常见问题--排错"></a>
 
 #### 1）脚本跑完了，但没有输出 VLESS 链接
 
@@ -359,12 +443,14 @@ curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minima
 ```
 
 ### 卸载
+<a id="卸载"></a>
 
 ```bash
 curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/uninstall.sh | sudo bash
 ```
 
 ### IP 来源链路
+<a id="ip-来源链路"></a>
 
 这个项目的 IP 来源分三层：
 
