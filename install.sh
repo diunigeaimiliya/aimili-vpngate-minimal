@@ -7,6 +7,8 @@ XRAY_CONFIG=/usr/local/etc/xray/config.json
 XRAY_BIN=/usr/local/bin/xray
 
 PREFERRED_COUNTRY=${PREFERRED_COUNTRY:-日本}
+PREFERRED_IP_TYPE=${PREFERRED_IP_TYPE:-residential}
+PREFERRED_QUALITY=${PREFERRED_QUALITY:-normal}
 PROXY_HOST=${PROXY_HOST:-127.0.0.1}
 PROXY_PORT=${PROXY_PORT:-7928}
 TUN_DEVICE=${TUN_DEVICE:-tun0}
@@ -14,8 +16,20 @@ ROUTE_TABLE_ID=${ROUTE_TABLE_ID:-100}
 DATA_DIR=${DATA_DIR:-/opt/aimili-minimal-data}
 VLESS_PORT=${VLESS_PORT:-2053}
 REMARK=${REMARK:-}
+WAIT_SECONDS=${WAIT_SECONDS:-180}
 
-parse_country_alias() {
+print_section() {
+  echo
+  echo "==== $1 ===="
+}
+
+fail() {
+  echo
+  echo "[ERROR] $1" >&2
+  exit 1
+}
+
+country_alias() {
   case "$(echo "$1" | tr '[:upper:]' '[:lower:]')" in
     jp|japan|日本) echo "日本" ;;
     kr|korea|韩国|南韩) echo "韩国" ;;
@@ -23,43 +37,79 @@ parse_country_alias() {
   esac
 }
 
+usage() {
+  cat <<'EOF'
+Usage:
+  bash install.sh
+  bash install.sh jp
+  bash install.sh kr
+  bash install.sh --country kr --port 2054 --remark 韩国家宽
+
+Flags:
+  --country <name>
+  --port, --vless-port <port>
+  --remark <text>
+  --proxy-port <port>
+  --tun <name>
+  --route-table <id>
+  --data-dir <path>
+  --wait-seconds <seconds>
+  -h, --help
+EOF
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     jp|japan|日本|kr|korea|韩国|南韩)
-      PREFERRED_COUNTRY="$(parse_country_alias "$1")"
+      PREFERRED_COUNTRY="$(country_alias "$1")"
       shift
       ;;
     --country)
-      PREFERRED_COUNTRY="$(parse_country_alias "$2")"
+      [[ $# -ge 2 ]] || fail "--country requires a value"
+      PREFERRED_COUNTRY="$(country_alias "$2")"
       shift 2
       ;;
     --port|--vless-port)
+      [[ $# -ge 2 ]] || fail "$1 requires a value"
       VLESS_PORT="$2"
       shift 2
       ;;
     --remark)
+      [[ $# -ge 2 ]] || fail "--remark requires a value"
       REMARK="$2"
       shift 2
       ;;
     --proxy-port)
+      [[ $# -ge 2 ]] || fail "--proxy-port requires a value"
       PROXY_PORT="$2"
       shift 2
       ;;
     --tun)
+      [[ $# -ge 2 ]] || fail "--tun requires a value"
       TUN_DEVICE="$2"
       shift 2
       ;;
     --route-table)
+      [[ $# -ge 2 ]] || fail "--route-table requires a value"
       ROUTE_TABLE_ID="$2"
       shift 2
       ;;
     --data-dir)
+      [[ $# -ge 2 ]] || fail "--data-dir requires a value"
       DATA_DIR="$2"
       shift 2
       ;;
+    --wait-seconds)
+      [[ $# -ge 2 ]] || fail "--wait-seconds requires a value"
+      WAIT_SECONDS="$2"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
     *)
-      echo "Unknown argument: $1" >&2
-      exit 1
+      fail "Unknown argument: $1"
       ;;
   esac
 done
@@ -76,19 +126,15 @@ if [[ -z "$REMARK" ]]; then
   REMARK="${PREFERRED_COUNTRY}家宽"
 fi
 
-print_section() {
-  echo
-  echo "==== $1 ===="
-}
-
 if [[ $EUID -ne 0 ]]; then
-  echo "Please run as root"
-  exit 1
+  fail "Please run this script as root"
 fi
 
+print_section "Step 1/6: Install dependencies"
 apt-get update
 apt-get install -y openvpn iproute2 curl ca-certificates python3 git unzip
 
+print_section "Step 2/6: Download project"
 if [[ ! -d "$REPO_DIR/.git" ]]; then
   rm -rf "$REPO_DIR"
   git clone https://github.com/diunigeaimiliya/aimili-vpngate-minimal.git "$REPO_DIR"
@@ -97,6 +143,8 @@ else
 fi
 
 mkdir -p "$DATA_DIR"
+
+print_section "Step 3/6: Write service file"
 cat > /etc/systemd/system/${SERVICE_NAME}.service <<EOF
 [Unit]
 Description=Aimili VPNGate Minimal
@@ -110,8 +158,8 @@ ExecStart=/usr/bin/python3 ${REPO_DIR}/aimili_minimal.py
 Restart=always
 RestartSec=5
 Environment=PREFERRED_COUNTRY=${PREFERRED_COUNTRY}
-Environment=PREFERRED_IP_TYPE=residential
-Environment=PREFERRED_QUALITY=normal
+Environment=PREFERRED_IP_TYPE=${PREFERRED_IP_TYPE}
+Environment=PREFERRED_QUALITY=${PREFERRED_QUALITY}
 Environment=PROXY_HOST=${PROXY_HOST}
 Environment=PROXY_PORT=${PROXY_PORT}
 Environment=TUN_DEVICE=${TUN_DEVICE}
@@ -122,12 +170,13 @@ Environment=DATA_DIR=${DATA_DIR}
 WantedBy=multi-user.target
 EOF
 
+print_section "Step 4/6: Install / configure Xray"
 if [[ ! -x "$XRAY_BIN" ]]; then
   ARCH=$(dpkg --print-architecture)
   case "$ARCH" in
     amd64) XRAY_ZIP='Xray-linux-64.zip' ;;
     arm64) XRAY_ZIP='Xray-linux-arm64-v8a.zip' ;;
-    *) echo "Unsupported arch: $ARCH"; exit 1 ;;
+    *) fail "Unsupported arch: $ARCH" ;;
   esac
   TMPDIR=$(mktemp -d)
   curl -L "https://github.com/XTLS/Xray-core/releases/latest/download/${XRAY_ZIP}" -o "$TMPDIR/xray.zip"
@@ -172,7 +221,7 @@ conf['routing']['rules']=[r for r in conf['routing']['rules'] if 'aimili-vless' 
 conf['inbounds'].append({
   'tag':'aimili-vless',
   'listen':'0.0.0.0',
-  'port':$VLESS_PORT,
+  'port':int('$VLESS_PORT'),
   'protocol':'vless',
   'settings':{'clients':[{'id':'$UUID','flow':'xtls-rprx-vision','email':'aimili-minimal@local'}],'decryption':'none'},
   'streamSettings':{
@@ -189,7 +238,7 @@ conf['inbounds'].append({
   },
   'sniffing':{'enabled':True,'destOverride':['http','tls','quic']}
 })
-conf['outbounds'].append({'protocol':'socks','tag':'aimili-socks-out','settings':{'servers':[{'address':'127.0.0.1','port':$PROXY_PORT}]}})
+conf['outbounds'].append({'protocol':'socks','tag':'aimili-socks-out','settings':{'servers':[{'address':'127.0.0.1','port':int('$PROXY_PORT')}]}})
 conf['routing']['rules'].append({'type':'field','inboundTag':['aimili-vless'],'outboundTag':'aimili-socks-out'})
 p.write_text(json.dumps(conf, ensure_ascii=False, indent=2))
 PY
@@ -209,15 +258,20 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 
+print_section "Step 5/6: Start services"
 systemctl daemon-reload
 systemctl enable --now ${SERVICE_NAME}
 systemctl enable --now xray
 systemctl restart ${SERVICE_NAME}
 systemctl restart xray
 
+print_section "Step 6/6: Wait for healthy preferred node"
 STATE_FILE="${DATA_DIR}/state.json"
+NODES_FILE="${DATA_DIR}/nodes.json"
 WAIT_OK=0
-for _ in $(seq 1 36); do
+WAIT_ROUNDS=$((WAIT_SECONDS / 5))
+[[ "$WAIT_ROUNDS" -lt 1 ]] && WAIT_ROUNDS=1
+for _ in $(seq 1 "$WAIT_ROUNDS"); do
   sleep 5
   if [[ -f "$STATE_FILE" ]]; then
     if python3 - <<PY
@@ -244,6 +298,15 @@ systemctl --no-pager --full status xray | sed -n '1,20p' || true
 print_section "Port Check"
 ss -ltnp | grep -E ":${PROXY_PORT}|:${VLESS_PORT}" || true
 
+ACTIVE_NODE=""
+EXIT_PROXY_IP=""
+EXIT_PROXY_LATENCY=""
+LAST_MESSAGE=""
+NODE_COUNTRY=""
+NODE_LOCATION=""
+NODE_QUALITY=""
+NODE_IP_TYPE=""
+
 if [[ -f "$STATE_FILE" ]]; then
   print_section "Current State"
   python3 - <<PY
@@ -254,11 +317,78 @@ state=json.loads(p.read_text(encoding='utf-8'))
 for k in ['active_openvpn_node_id','last_check_message','proxy_ok','proxy_ip','proxy_latency_ms']:
     print(f"{k}: {state.get(k)}")
 PY
+
+  ACTIVE_NODE=$(python3 - <<PY
+import json
+from pathlib import Path
+state=json.loads(Path('$STATE_FILE').read_text(encoding='utf-8'))
+print(state.get('active_openvpn_node_id') or '')
+PY
+)
+  EXIT_PROXY_IP=$(python3 - <<PY
+import json
+from pathlib import Path
+state=json.loads(Path('$STATE_FILE').read_text(encoding='utf-8'))
+print(state.get('proxy_ip') or '')
+PY
+)
+  EXIT_PROXY_LATENCY=$(python3 - <<PY
+import json
+from pathlib import Path
+state=json.loads(Path('$STATE_FILE').read_text(encoding='utf-8'))
+print(state.get('proxy_latency_ms') or '')
+PY
+)
+  LAST_MESSAGE=$(python3 - <<PY
+import json
+from pathlib import Path
+state=json.loads(Path('$STATE_FILE').read_text(encoding='utf-8'))
+print(state.get('last_check_message') or '')
+PY
+)
+fi
+
+if [[ -n "$ACTIVE_NODE" && -f "$NODES_FILE" ]]; then
+  NODE_META=$(python3 - <<PY
+import json
+from pathlib import Path
+nodes=json.loads(Path('$NODES_FILE').read_text(encoding='utf-8'))
+active='$ACTIVE_NODE'
+node=next((n for n in nodes if n.get('id')==active), {})
+print(json.dumps({
+  'country': node.get('country') or '',
+  'location': node.get('location') or '',
+  'quality': node.get('quality') or '',
+  'ip_type': node.get('ip_type') or ''
+}, ensure_ascii=False))
+PY
+)
+  NODE_COUNTRY=$(python3 - <<PY
+import json
+print(json.loads('''$NODE_META''').get('country',''))
+PY
+)
+  NODE_LOCATION=$(python3 - <<PY
+import json
+print(json.loads('''$NODE_META''').get('location',''))
+PY
+)
+  NODE_QUALITY=$(python3 - <<PY
+import json
+print(json.loads('''$NODE_META''').get('quality',''))
+PY
+)
+  NODE_IP_TYPE=$(python3 - <<PY
+import json
+print(json.loads('''$NODE_META''').get('ip_type',''))
+PY
+)
 fi
 
 if [[ "$WAIT_OK" != "1" ]]; then
   print_section "Install Result"
   echo "Installation finished, but no healthy preferred node is connected yet."
+  echo "Last message: ${LAST_MESSAGE}"
   echo "Check logs with: journalctl -u ${SERVICE_NAME} -n 100 --no-pager"
   exit 1
 fi
@@ -272,15 +402,6 @@ VLESS_LINK=$(python3 ${REPO_DIR}/share_link.py \
   --short-id "$SHORT_ID" \
   --remark "$REMARK")
 
-ACTIVE_NODE=$(python3 - <<PY
-import json
-from pathlib import Path
-p=Path('$STATE_FILE')
-state=json.loads(p.read_text(encoding='utf-8'))
-print(state.get('active_openvpn_node_id') or '')
-PY
-)
-
 VLESS_FILE="/root/aimili-vless-${TUN_DEVICE}.txt"
 printf '%s\n' "$VLESS_LINK" > "$VLESS_FILE"
 chmod 600 "$VLESS_FILE"
@@ -291,7 +412,13 @@ echo "$VLESS_LINK"
 print_section "Summary"
 printf '%-18s %s\n' 'Country' "${PREFERRED_COUNTRY}"
 printf '%-18s %s\n' 'Exit IP' "${SERVER_IP}"
+printf '%-18s %s\n' 'Proxy Exit IP' "${EXIT_PROXY_IP}"
+printf '%-18s %s\n' 'Proxy Latency' "${EXIT_PROXY_LATENCY}"
 printf '%-18s %s\n' 'Active Node' "${ACTIVE_NODE}"
+printf '%-18s %s\n' 'Node Country' "${NODE_COUNTRY}"
+printf '%-18s %s\n' 'Node Location' "${NODE_LOCATION}"
+printf '%-18s %s\n' 'Node Quality' "${NODE_QUALITY}"
+printf '%-18s %s\n' 'Node IP Type' "${NODE_IP_TYPE}"
 printf '%-18s %s\n' 'Proxy' "${PROXY_HOST}:${PROXY_PORT}"
 printf '%-18s %s\n' 'Tun Device' "${TUN_DEVICE}"
 printf '%-18s %s\n' 'Route Table' "${ROUTE_TABLE_ID}"
