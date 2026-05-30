@@ -8,10 +8,11 @@ XRAY_CONFIG=/usr/local/etc/xray/config.json
 XRAY_BIN=/usr/local/bin/xray
 VLESS_PORT=${VLESS_PORT:-2053}
 PREFERRED_COUNTRY=${PREFERRED_COUNTRY:-日本}
-PROXY_HOST=127.0.0.1
+PROXY_HOST=${PROXY_HOST:-127.0.0.1}
 PROXY_PORT=${PROXY_PORT:-7928}
 TUN_DEVICE=${TUN_DEVICE:-tun0}
 ROUTE_TABLE_ID=${ROUTE_TABLE_ID:-100}
+DATA_DIR=${DATA_DIR:-/opt/aimili-minimal-data}
 
 REMARK=""
 while [[ $# -gt 0 ]]; do
@@ -47,12 +48,24 @@ if [[ -z "$REMARK" ]]; then
   REMARK="${PREFERRED_COUNTRY}家宽"
 fi
 
+COUNTRY_EXPLICIT=0
+PORT_EXPLICIT=0
+REMARK_EXPLICIT=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --country) COUNTRY_EXPLICIT=1 ;;
+    --port) PORT_EXPLICIT=1 ;;
+    --remark) REMARK_EXPLICIT=1 ;;
+  esac
+done
+
 if [[ "$PREFERRED_COUNTRY" == "韩国" ]]; then
-  : "${PROXY_PORT:=7938}"
-  : "${TUN_DEVICE:=tun1}"
-  : "${ROUTE_TABLE_ID:=101}"
-  : "${VLESS_PORT:=2054}"
-  : "${DATA_DIR:=/opt/aimili-minimal-data-kr}"
+  if [[ "$PROXY_PORT" == "7928" ]]; then PROXY_PORT=7938; fi
+  if [[ "$TUN_DEVICE" == "tun0" ]]; then TUN_DEVICE=tun1; fi
+  if [[ "$ROUTE_TABLE_ID" == "100" ]]; then ROUTE_TABLE_ID=101; fi
+  if [[ "$VLESS_PORT" == "2053" ]]; then VLESS_PORT=2054; fi
+  if [[ "$DATA_DIR" == "/opt/aimili-minimal-data" ]]; then DATA_DIR=/opt/aimili-minimal-data-kr; fi
 fi
 
 print_section() {
@@ -260,6 +273,10 @@ print(state.get('active_openvpn_node_id') or '')
 PY
 )
 
+VLESS_FILE="/root/aimili-vless-${TUN_DEVICE}.txt"
+printf '%s\n' "$VLESS_LINK" > "$VLESS_FILE"
+chmod 600 "$VLESS_FILE"
+
 print_section "VLESS Link"
 echo "$VLESS_LINK"
 
@@ -273,4 +290,5 @@ echo "Route Table: ${ROUTE_TABLE_ID}"
 echo "VLESS Port: ${VLESS_PORT}"
 echo "Remark: ${REMARK}"
 echo "Data Dir: ${DATA_DIR}"
+echo "Saved Link File: ${VLESS_FILE}"
 echo "Status: healthy preferred node connected"

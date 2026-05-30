@@ -11,6 +11,7 @@ Run **one command**, and get:
 - local proxy already configured
 - Xray Reality inbound already configured
 - a ready-to-use **VLESS link** printed at the end
+- the final link also saved locally on disk
 
 ## Features
 
@@ -22,6 +23,7 @@ Run **one command**, and get:
 - Keep the current preferred node while health is good
 - Provide local HTTP / SOCKS5 proxy for Xray outbound
 - Auto-generate a VLESS Reality inbound and print the final share link
+- Save the final link to `/root/aimili-vless-<tun>.txt`
 
 ## One-command install
 
@@ -51,6 +53,7 @@ After installation finishes, it waits for a healthy preferred node and then prin
 - proxy health
 - exit IP
 - final ready-to-use VLESS link
+- local file path where the link was saved
 
 If no healthy preferred node is connected in time, the installer exits with an error and tells you which logs to check.
 
@@ -65,6 +68,7 @@ Defaults:
 - tun device: `tun0`
 - route table: `100`
 - VLESS Reality port: `2053`
+- saved link file: `/root/aimili-vless-tun0.txt`
 
 ## Example: Korea instance
 
@@ -73,6 +77,15 @@ Direct one-command install:
 ```bash
 bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) kr
 ```
+
+This automatically switches the default runtime values to:
+
+- proxy port: `7938`
+- tun device: `tun1`
+- route table: `101`
+- vless port: `2054`
+- data dir: `/opt/aimili-minimal-data-kr`
+- saved link file: `/root/aimili-vless-tun1.txt`
 
 Manual runtime example:
 
@@ -112,6 +125,12 @@ The installer prints a final summary and a final link like:
 
 ```text
 vless://UUID@SERVER:2053?remarks=日本家宽&tls=1&peer=www.cloudflare.com&udp=1&xtls=2&pbk=PUBLIC_KEY&sid=SHORT_ID
+```
+
+## Uninstall
+
+```bash
+curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/uninstall.sh | sudo bash
 ```
 
 ## IP source chain
