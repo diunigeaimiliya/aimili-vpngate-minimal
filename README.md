@@ -231,6 +231,14 @@ This project uses three sources:
    Used for `residential / proxy / hosting / mobile`
 3. **Final exit IP:** the connected VPNGate node itself
 
+### Disclaimer
+
+- This project depends on public VPNGate volunteer nodes.
+- Node quality, stability, country, and IP type can change over time.
+- A node classified as `residential` or `normal` is still based on third-party IP labeling and may not always match every platform's own risk model.
+- Public nodes may disappear, slow down, or become unavailable without notice.
+- Use this project only where you are allowed to do so, and review local laws / service terms yourself.
+
 ---
 
 ## 中文说明
@@ -460,6 +468,14 @@ curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minima
    用来判断 `住宅 / 代理 / 机房 / 移动`  
 3. **最终出口 IP**  
    是你连接成功后的那个 VPNGate 节点本身
+
+### 免责声明
+
+- 这个项目依赖的是 **VPNGate 公共志愿节点**。  
+- 节点的质量、稳定性、国家、IP 类型都可能随时变化。  
+- `residential` / `normal` 这些判断来自第三方 IP 标签服务，并不保证所有平台都一定按同样方式识别。  
+- 公共节点可能会随时失效、变慢或下线。  
+- 请自行确认你的使用场景、当地法律和目标服务条款是否允许。  
 
 ### 说明
 

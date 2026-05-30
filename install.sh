@@ -39,22 +39,35 @@ country_alias() {
 
 usage() {
   cat <<'EOF'
-Usage:
+aimili-vpngate-minimal installer
+
+USAGE
   bash install.sh
   bash install.sh jp
   bash install.sh kr
   bash install.sh --country kr --port 2054 --remark 韩国家宽
 
-Flags:
-  --country <name>
-  --port, --vless-port <port>
-  --remark <text>
-  --proxy-port <port>
-  --tun <name>
-  --route-table <id>
-  --data-dir <path>
-  --wait-seconds <seconds>
-  -h, --help
+COUNTRY SHORTCUTS
+  jp / japan / 日本
+  kr / korea / 韩国 / 南韩
+
+FLAGS
+  --country <name>         Target country, e.g. 日本 / 韩国 / jp / kr
+  --port <port>            VLESS Reality inbound port
+  --vless-port <port>      Alias of --port
+  --remark <text>          Share-link remark text
+  --proxy-port <port>      Local SOCKS/HTTP proxy port
+  --tun <name>             TUN device name, e.g. tun0 / tun1
+  --route-table <id>       Policy routing table id, e.g. 100 / 101
+  --data-dir <path>        Working data directory
+  --wait-seconds <sec>     Max seconds to wait for a healthy preferred node
+  -h, --help               Show this help
+
+EXAMPLES
+  bash install.sh
+  bash install.sh kr
+  bash install.sh --country kr --port 2054 --remark 韩国家宽
+  bash install.sh --country 日本 --proxy-port 7928 --tun tun0 --route-table 100
 EOF
 }
 
