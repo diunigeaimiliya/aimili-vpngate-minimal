@@ -13,19 +13,38 @@ PROXY_PORT=${PROXY_PORT:-7928}
 TUN_DEVICE=${TUN_DEVICE:-tun0}
 ROUTE_TABLE_ID=${ROUTE_TABLE_ID:-100}
 
-COUNTRY_ALIAS="${1:-}"
-if [[ -n "$COUNTRY_ALIAS" ]]; then
-  case "$(echo "$COUNTRY_ALIAS" | tr '[:upper:]' '[:lower:]')" in
+REMARK=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
     jp|japan|日本)
       PREFERRED_COUNTRY="日本"
+      shift
       ;;
     kr|korea|韩国|南韩)
       PREFERRED_COUNTRY="韩国"
+      shift
+      ;;
+    --country)
+      PREFERRED_COUNTRY="$2"
+      shift 2
+      ;;
+    --port)
+      VLESS_PORT="$2"
+      shift 2
+      ;;
+    --remark)
+      REMARK="$2"
+      shift 2
       ;;
     *)
-      PREFERRED_COUNTRY="$COUNTRY_ALIAS"
+      PREFERRED_COUNTRY="$1"
+      shift
       ;;
   esac
+done
+
+if [[ -z "$REMARK" ]]; then
+  REMARK="${PREFERRED_COUNTRY}家宽"
 fi
 
 if [[ "$PREFERRED_COUNTRY" == "韩国" ]]; then
@@ -230,16 +249,28 @@ VLESS_LINK=$(python3 ${REPO_DIR}/share_link.py \
   --uuid "$UUID" \
   --public-key "$PUBLIC_KEY" \
   --short-id "$SHORT_ID" \
-  --remark "${PREFERRED_COUNTRY}家宽")
+  --remark "$REMARK")
+
+ACTIVE_NODE=$(python3 - <<PY
+import json
+from pathlib import Path
+p=Path('$STATE_FILE')
+state=json.loads(p.read_text(encoding='utf-8'))
+print(state.get('active_openvpn_node_id') or '')
+PY
+)
 
 print_section "VLESS Link"
 echo "$VLESS_LINK"
 
 print_section "Summary"
 echo "Country: ${PREFERRED_COUNTRY}"
+echo "Exit IP: ${SERVER_IP}"
+echo "Active Node: ${ACTIVE_NODE}"
 echo "Proxy: ${PROXY_HOST}:${PROXY_PORT}"
 echo "Tun Device: ${TUN_DEVICE}"
 echo "Route Table: ${ROUTE_TABLE_ID}"
 echo "VLESS Port: ${VLESS_PORT}"
+echo "Remark: ${REMARK}"
 echo "Data Dir: ${DATA_DIR}"
 echo "Status: healthy preferred node connected"

@@ -38,11 +38,18 @@ bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate
 bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) kr
 ```
 
+More explicit parameters:
+
+```bash
+bash <(curl -Ls https://raw.githubusercontent.com/diunigeaimiliya/aimili-vpngate-minimal/main/install.sh) --country kr --port 2054 --remark 韩国家宽
+```
+
 After installation finishes, it waits for a healthy preferred node and then prints:
 
 - service status
 - current selected node
 - proxy health
+- exit IP
 - final ready-to-use VLESS link
 
 If no healthy preferred node is connected in time, the installer exits with an error and tells you which logs to check.
@@ -101,7 +108,7 @@ VLESS_PORT=2053
 
 ## Output
 
-The installer prints a final link like:
+The installer prints a final summary and a final link like:
 
 ```text
 vless://UUID@SERVER:2053?remarks=日本家宽&tls=1&peer=www.cloudflare.com&udp=1&xtls=2&pbk=PUBLIC_KEY&sid=SHORT_ID
